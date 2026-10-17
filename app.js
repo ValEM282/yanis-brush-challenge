@@ -1,0 +1,15 @@
+const $=s=>document.querySelector(s);let stream,recorder,chunks=[],file,objectURL,interval;
+const birthday=Date.parse('2026-12-11T00:00:00-05:00');
+function phase(){const opened=Date.now()>=birthday;$('#participation').hidden=opened;$('#birthday').hidden=!opened;}
+phase();setInterval(phase,60000);
+SONGS.forEach((s,i)=>{const o=document.createElement('option');o.value=i;o.textContent=s.artist+' — '+s.title;$('#song').append(o)});
+function updateSong(){const s=SONGS[Number($('#song').value)];$('#listen').href=s.url;$('#songInfo').textContent=s.title+' — '+s.artist;}
+$('#song').onchange=updateSong;updateSong();
+function stopTracks(){stream?.getTracks().forEach(t=>t.stop());stream=null;}
+function fallback(){$('#capture').hidden=true;$('#fallback').hidden=false;stopTracks();}
+$('#camera').onclick=async()=>{if(!$('#first').value.trim()||!$('#last').value.trim()){alert('Indique ton prénom et ton NOM.');return;}if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){fallback();return;}try{stopTracks();stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:true});$('#preview').srcObject=stream;$('#capture').hidden=false;$('#fallback').hidden=true;$('#result').hidden=true;}catch(e){fallback();}};
+function showResult(f){file=f;if(objectURL)URL.revokeObjectURL(objectURL);objectURL=URL.createObjectURL(f);$('#playback').src=objectURL;$('#capture').hidden=true;$('#fallback').hidden=true;$('#result').hidden=false;stopTracks();}
+$('#start').onclick=()=>{if(!stream)return;const mime=['video/mp4','video/webm;codecs=vp8,opus','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));chunks=[];recorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};recorder.onstop=()=>{const type=recorder.mimeType||'video/webm';const ext=type.includes('mp4')?'mp4':'webm';showResult(new File(chunks,'yanis-brush-'+Date.now()+'.'+ext,{type}))};recorder.start(1000);$('#start').disabled=true;$('#stop').disabled=false;let remaining=120;$('#timer').textContent='02:00';clearInterval(interval);interval=setInterval(()=>{remaining--;$('#timer').textContent=String(Math.floor(Math.max(remaining,0)/60)).padStart(2,'0')+':'+String(Math.max(remaining,0)%60).padStart(2,'0');if(remaining<=0)stop()},1000)};
+function stop(){clearInterval(interval);if(recorder?.state==='recording')recorder.stop();$('#start').disabled=false;$('#stop').disabled=true;}
+$('#stop').onclick=stop;$('#redo').onclick=()=>{$('#result').hidden=true;$('#camera').click()};$('#file').onchange=e=>{const f=e.target.files?.[0];if(f)showResult(f)};
+window.addEventListener('pagehide',()=>{clearInterval(interval);stopTracks();if(objectURL)URL.revokeObjectURL(objectURL)});
