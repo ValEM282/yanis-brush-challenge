@@ -3,7 +3,7 @@ const birthday=Date.parse('2026-12-11T00:00:00-05:00');
 function phase(){const opened=Date.now()>=birthday;$('#participation').hidden=opened;$('#birthday').hidden=!opened;}
 phase();setInterval(phase,60000);
 SONGS.forEach((s,i)=>{const o=document.createElement('option');o.value=i;o.textContent=s.artist+' — '+s.title;$('#song').append(o)});
-function updateSong(){const s=SONGS[Number($('#song').value)];$('#listen').href=s.url;$('#songInfo').textContent=s.title+' — '+s.artist;}
+function updateSong(){const s=SONGS[Number($('#song').value)];$('#listen').href=s.url||'#';$('#listen').hidden=!s.url;$('#youtube').href=s.youtube_url||'#';$('#youtube').hidden=!s.youtube_url;$('#songInfo').textContent=s.title+' — '+s.artist;}
 $('#song').onchange=updateSong;updateSong();
 function stopTracks(){stream?.getTracks().forEach(t=>t.stop());stream=null;}
 function fallback(){$('#capture').hidden=true;$('#fallback').hidden=false;stopTracks();}
